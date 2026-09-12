@@ -645,15 +645,9 @@
     activeIdx = -1;
   }
 
-  /* Open in a new tab via an anchor (works cleaner than window.open from file://) */
+  /* Navigate in the current tab. */
   function openUrl(url){
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    window.location.href = url;
   }
 
   function setActive(i){
