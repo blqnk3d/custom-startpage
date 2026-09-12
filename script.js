@@ -228,6 +228,14 @@
     catch(e){ return url; }
   }
 
+  /* Resolves a query to a site URL when it's an exact shortcut or looks like an address; otherwise null. */
+  function smartUrlFor(text){
+    const t = text.trim();
+    const lower = t.toLowerCase();
+    if (SMART_URLS[lower]) return SMART_URLS[lower];
+    return isLikelyUrl(t);
+  }
+
   function iconFor(w){
     if (w.type === "shortcut") return ICONS.link;
     return ICONS[w.type] || ICONS.link;
@@ -670,7 +678,8 @@
     if (shortcutUrl) rows.push({ type:"shortcut", label:"Go to " + formatDomain(shortcutUrl), url:shortcutUrl, icon:ICON_EXTERNAL, badge:"→" });
 
     getSearchHistory().filter(s => s.toLowerCase().includes(lower)).slice(0, 7).forEach(s => {
-      rows.push({ type:"history", label:s, text:s, icon:ICONS.link, badge:"" });
+      const smart = smartUrlFor(s);
+      rows.push({ type:"history", label:s, text:s, url:smart, icon:ICONS.link, badge:smart ? "→" : "" });
     });
 
     rows.push({ type:"search", label:"Search for “" + q + "”", url:"https://noai.duckduckgo.com/?ia=web&t=h_&q=" + encodeURIComponent(q), icon:ICON_SEARCH, badge:"↵" });
@@ -758,7 +767,10 @@
         if (url) openUrl(url);
         else if (text) doSearch(text);
       } else if (searchInput.value.trim()){
-        doSearch(searchInput.value.trim());
+        const raw = searchInput.value.trim();
+        const smart = smartUrlFor(raw);
+        if (smart) openUrl(smart);
+        else doSearch(raw);
       }
       saveSearchHistory(searchInput.value.trim());
       hideSuggest();
