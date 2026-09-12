@@ -1132,4 +1132,11 @@
   renderAll();
   persist();
   applyBackground();
+
+  try{
+    const ae = document.activeElement;
+    if (!ae || (ae !== document.body && ae.tagName !== "INPUT" && ae.tagName !== "TEXTAREA")){
+      searchInput.focus({ preventScroll:true });
+    }
+  }catch(err){}
 })();
