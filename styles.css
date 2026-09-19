@@ -413,23 +413,23 @@
   .kanban-col{
     flex:0 0 170px; min-width:170px; max-width:170px;
     display:flex; flex-direction:column; gap:8px;
-    background:var(--bg-2); border:1px solid var(--line-soft); border-radius:8px;
+    background:var(--bg-2); border:1px solid var(--line-soft); border-radius:var(--kb-radius, 8px);
     padding:9px; overflow:hidden;
   }
   .kanban-col-head{ display:flex; align-items:center; gap:6px; }
   .kanban-title{
     flex:1; min-width:0; background:none; border:none; color:var(--ink);
     font-family:var(--font-ui); font-size:15px; font-weight:600; outline:none;
-    padding:2px 4px; border-radius:4px;
+    padding:2px 4px; border-radius:var(--kb-radius, 4px);
   }
   .kanban-title:focus{ background:var(--line-soft); }
   .kanban-count{
     flex:0 0 auto; font-size:12px; color:var(--ink-faint); background:var(--panel);
-    border:1px solid var(--line-soft); border-radius:8px; padding:1px 6px;
+    border:1px solid var(--line-soft); border-radius:var(--kb-radius, 8px); padding:1px 6px;
   }
   .kanban-del-col, .kanban-del-card{
     background:none; border:none; color:var(--ink-faint); cursor:pointer;
-    padding:3px; border-radius:4px; display:flex; align-items:center; justify-content:center;
+    padding:3px; border-radius:var(--kb-radius, 4px); display:flex; align-items:center; justify-content:center;
     flex:0 0 auto;
   }
   .kanban-del-col:hover, .kanban-del-card:hover{ color:var(--danger); background:rgba(165,106,95,.15); }
@@ -442,7 +442,7 @@
   .kanban-empty{ font-size:13px; color:var(--ink-faint); text-align:center; padding:14px 0; }
   .kanban-card{
     display:flex; align-items:stretch; gap:4px; padding:7px 8px;
-    background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--kb-radius, 6px);
     cursor:grab; user-select:none;
   }
   .kanban-card.dragging{ opacity:.45; }
@@ -454,16 +454,16 @@
   .kanban-add-card{ flex:0 0 auto; display:flex; gap:5px; }
   .kanban-add-card input{
     flex:1; min-width:0; background:var(--panel); border:1px solid var(--line); color:var(--ink);
-    border-radius:6px; padding:6px 8px; font-family:var(--font-ui); font-size:13.5px; outline:none;
+    border-radius:var(--kb-radius, 6px); padding:6px 8px; font-family:var(--font-ui); font-size:13.5px; outline:none;
   }
   .kanban-add-card input:focus{ border-color:var(--accent); }
   .kanban-add-card button{
-    background:var(--accent); border:none; color:#16171b; border-radius:6px;
+    background:var(--accent); border:none; color:#16171b; border-radius:var(--kb-radius, 6px);
     width:30px; cursor:pointer; font-weight:600; font-size:16px;
   }
   .kanban-new-col{ flex:0 0 40px; display:flex; align-items:center; justify-content:center; }
   .kanban-new-col button{
-    width:34px; height:34px; border-radius:50%; background:var(--panel);
+    width:34px; height:34px; border-radius:var(--kb-radius, 18px); background:var(--panel);
     border:1px solid var(--line); color:var(--ink-dim); cursor:pointer; font-size:18px;
     display:flex; align-items:center; justify-content:center;
   }

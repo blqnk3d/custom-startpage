@@ -1147,6 +1147,7 @@
     flyoutBody.innerHTML = `
       <div class="kanban" id="kanbanBoard"></div>
       <div class="kanban-hint">Click a column or card title to edit it. Drag cards to move them between columns.</div>`;
+    flyoutBody.style.setProperty("--kb-radius", (w.style.radius || 0) + "px");
     const board = flyoutBody.querySelector("#kanbanBoard");
 
     function draw(){
