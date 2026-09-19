@@ -125,27 +125,7 @@
         style:{hue:280, radius:0, opacity:100}, data:{notes:{}} },
       { id: uid(), type:"ocr", x:120, y:430, w:110, h:110,
         style:{hue:200, radius:0, opacity:100}, data:{} },
-      { id: uid(), type:"kanban", x:420, y:150, w:300, h:340,
-        style:{hue:220, radius:0, opacity:100},
-        data:{ columns:[
-          { id: uid(), title:"To do", items:[] },
-          { id: uid(), title:"Doing", items:[] },
-          { id: uid(), title:"Done", items:[] }
-        ]} },
     ];
-  }
-
-  if (!storage.get("slate.widgets.kanbanSeeded", false) && !widgets.some(w => w.type === "kanban")){
-    widgets.push({
-      id: uid(), type:"kanban", x:420, y:150, w:300, h:340,
-      style:{hue:220, radius:0, opacity:100},
-      data:{ columns:[
-        { id: uid(), title:"To do", items:[] },
-        { id: uid(), title:"Doing", items:[] },
-        { id: uid(), title:"Done", items:[] }
-      ]}
-    });
-    storage.set("slate.widgets.kanbanSeeded", true);
   }
 
   let editMode = false;
@@ -170,10 +150,15 @@
     calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
     note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M16 4v3h3"/></svg>',
     ocr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H4a1 1 0 0 0-1 1v3M17 3h3a1 1 0 0 1 1 1v3M21 17v3a1 1 0 0 1-1 1h-3M7 21H4a1 1 0 0 1-1-1v-3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
-    kanban: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="6" height="16" rx="1.4"/><rect x="9.7" y="4" width="6" height="11" rx="1.4"/><rect x="16.4" y="4" width="4.6" height="7" rx="1.4"/></svg>'
+    kanban: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="6" height="16" rx="1.4"/><rect x="9.7" y="4" width="6" height="11" rx="1.4"/><rect x="16.4" y="4" width="4.6" height="7" rx="1.4"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    timer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6M12 5V2"/></svg>',
+    toolbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v3a6 6 0 0 1-2 4.4V21H5v-5.6A6 6 0 0 1 3 11V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2z"/></svg>',
+    habits: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 13l3 3 7-7"/></svg>',
+    weather: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4 4 0 1 1 .5-7.97A6 6 0 0 1 19 12.5 3.5 3.5 0 0 1 17.5 18H7z"/></svg>'
   };
 
-  const WIDGET_LABELS = { calculator:"Calculator", todo:"To-do", calendar:"Calendar", ocr:"OCR", note:"Note", kanban:"Kanban" };
+  const WIDGET_LABELS = { calculator:"Calculator", todo:"To-do", calendar:"Calendar", ocr:"OCR", note:"Note", kanban:"Kanban", clock:"Clock", timer:"Timer", toolbox:"Toolbox", habits:"Habits", weather:"Weather" };
 
   /* ---------------- smart search map ---------------- */
   const SMART_URLS = {
@@ -263,9 +248,20 @@
   }
 
   /* ---------------- render ---------------- */
+  let clockTimers = [];
   function renderAll(){
+    clockTimers.forEach(clearInterval);
+    clockTimers = [];
     canvas.innerHTML = "";
     widgets.forEach(renderWidget);
+  }
+
+  function fmtTime(date, h24, tz){
+    const d = new Date(date.getTime() + tz * 3600000);
+    let h = d.getUTCHours(), m = d.getUTCMinutes();
+    let ap = "";
+    if (!h24){ ap = h >= 12 ? "pm" : "am"; h = h % 12 || 12; }
+    return String(h) + ":" + String(m).padStart(2, "0") + (h24 ? "" : ap);
   }
 
   function renderWidget(w){
@@ -305,6 +301,17 @@
       ta.addEventListener("pointerdown", e => e.stopPropagation());
       ta.addEventListener("input", () => { w.data.text = ta.value; persist(); });
       body.appendChild(ta);
+    } else if (w.type === "clock"){
+      const time = document.createElement("div");
+      time.className = "clock-tile";
+      const tick = () => { time.textContent = fmtTime(new Date(), w.data.h24, w.data.tz); };
+      tick();
+      clockTimers.push(setInterval(tick, 1000));
+      body.appendChild(time);
+      body.addEventListener("click", (e) => {
+        if (editMode) return;
+        activate(w);
+      });
     } else {
       const icon = document.createElement("div");
       icon.className = "widget-icon";
@@ -529,6 +536,11 @@
         { id: uid(), title:"Done", items:[] }
       ]
     };
+    if (pendingType === "clock") base.data = { h24:false, tz:new Date().getTimezoneOffset()/60 };
+    if (pendingType === "timer") base.data = {};
+    if (pendingType === "toolbox") base.data = {};
+    if (pendingType === "habits") base.data = { habits: [] };
+    if (pendingType === "weather") base.data = { city:"", lat:null, lon:null, cache:null };
     widgets.push(base);
     persist();
     renderAll();
@@ -819,6 +831,7 @@
   const flyoutTitle = document.getElementById("flyoutTitle");
   const flyoutBody = document.getElementById("flyoutBody");
   const flyoutClose = document.getElementById("flyoutClose");
+  let flyoutContent = null;
   let flyoutDrag = null;
   let ocrPasteHandler = null;
 
@@ -833,6 +846,7 @@
   window.addEventListener("resize", clampFlyout);
 
   function closeFlyout(){
+    if (flyoutContent && flyoutContent._cleanup){ flyoutContent._cleanup(); flyoutContent._cleanup = null; }
     flyout.classList.remove("open");
     flyoutBody.innerHTML = "";
   }
@@ -864,11 +878,20 @@
       if (w.data.url) openUrl(w.data.url);
       return;
     }
+    if (flyoutContent._cleanup){ flyoutContent._cleanup(); flyoutContent._cleanup = null; }
+    flyoutContent = document.createElement("div");
+    flyoutBody.innerHTML = "";
+    flyoutBody.appendChild(flyoutContent);
     if (w.type === "calculator"){ flyoutTitle.textContent = "Calculator"; buildCalculator(); }
     else if (w.type === "todo"){ flyoutTitle.textContent = "To-do"; buildTodo(w); }
     else if (w.type === "calendar"){ flyoutTitle.textContent = "Calendar"; buildCalendar(w); }
     else if (w.type === "ocr"){ flyoutTitle.textContent = "OCR"; buildOCR(w); }
     else if (w.type === "kanban"){ flyoutTitle.textContent = "Kanban board"; buildKanban(w); }
+    else if (w.type === "clock"){ flyoutTitle.textContent = "Clock"; buildClock(w); }
+    else if (w.type === "timer"){ flyoutTitle.textContent = "Timer"; buildTimer(w); }
+    else if (w.type === "toolbox"){ flyoutTitle.textContent = "Toolbox"; buildToolbox(w); }
+    else if (w.type === "habits"){ flyoutTitle.textContent = "Habits"; buildHabits(w); }
+    else if (w.type === "weather"){ flyoutTitle.textContent = "Weather"; buildWeather(w); }
     else return;
 
     flyout.classList.add("open");
@@ -1304,6 +1327,538 @@
     }
 
     draw();
+  }
+
+  /* ---------------- clock ---------------- */
+  function buildClock(w){
+    flyoutContent.innerHTML = "";
+    w.data.h24 = !!w.data.h24;
+    w.data.tz = w.data.tz == null ? 0 : w.data.tz;
+
+    const row = document.createElement("div");
+    row.className = "fly-row";
+
+    const hSel = document.createElement("select");
+    hSel.className = "fly-select";
+    hSel.title = "Time format";
+    ["12-hour","24-hour"].forEach((txt, i) => {
+      const o = document.createElement("option");
+      o.value = i === 1 ? "1" : "0";
+      o.textContent = txt;
+      hSel.appendChild(o);
+    });
+    hSel.value = w.data.h24 ? "1" : "0";
+    hSel.addEventListener("change", () => {
+      w.data.h24 = hSel.value === "1";
+      persist();
+      renderAll();
+    });
+    row.appendChild(hSel);
+
+    const tzSel = document.createElement("select");
+    tzSel.className = "fly-select";
+    tzSel.title = "Timezone offset from your location";
+    tzSel.innerHTML = "";
+    for (let h = -11; h <= 12; h++){
+      const o = document.createElement("option");
+      o.value = String(h);
+      o.textContent = "TZ " + (h > 0 ? "+" : "") + h + "h";
+      tzSel.appendChild(o);
+    }
+    tzSel.value = String(w.data.tz);
+    tzSel.addEventListener("change", () => {
+      w.data.tz = parseInt(tzSel.value, 10);
+      persist();
+      renderAll();
+    });
+    row.appendChild(tzSel);
+
+    const live = document.createElement("div");
+    live.className = "clock-live";
+    const tick = () => { live.textContent = fmtTime(new Date(), w.data.h24, w.data.tz); };
+    tick();
+    const iv = setInterval(tick, 1000);
+    flyoutContent.appendChild(row);
+    flyoutContent.appendChild(live);
+
+    flyoutContent.addEventListener("remove", () => clearInterval(iv));
+    flyoutContent._cleanup = () => { clearInterval(iv); };
+  }
+
+  /* ---------------- timer ---------------- */
+  function buildTimer(w){
+    if (flyoutContent._cleanup){ flyoutContent._cleanup(); flyoutContent._cleanup = null; }
+    flyoutContent.innerHTML = "";
+    const d = w.data;
+    d.mode = d.mode || "stopwatch";
+
+    const tabs = document.createElement("div");
+    tabs.className = "tm-tabs";
+    [["stopwatch","Stopwatch"],["countdown","Countdown"]].forEach(([m, txt]) => {
+      const b = document.createElement("button");
+      b.className = "tm-tab" + (d.mode === m ? " on" : "");
+      b.textContent = txt;
+      b.addEventListener("click", () => { d.mode = m; persist(); buildTimer(w); });
+      tabs.appendChild(b);
+    });
+    flyoutContent.appendChild(tabs);
+
+    const disp = document.createElement("div");
+    disp.className = "tm-disp";
+
+    if (d.mode === "stopwatch"){
+      if (!d.sw) d.sw = { run:false, acc:0, from:0 };
+      const st = d.sw;
+      const render = () => {
+        const el = st.run ? Date.now() - st.from + st.acc : st.acc;
+        const cs = Math.floor(el / 10) % 100;
+        const s = Math.floor(el / 1000) % 60;
+        const m = Math.floor(el / 60000);
+        disp.textContent = String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0") + "." + String(cs).padStart(2,"0");
+      };
+      const iv = setInterval(() => { if (st.run) render(); }, 100);
+      flyoutContent._cleanup = () => clearInterval(iv);
+      const r1 = document.createElement("button");
+      r1.className = "widget-btn";
+      r1.textContent = st.run ? "Pause" : "Start";
+      r1.addEventListener("click", () => {
+        if (st.run){ st.acc += Date.now() - st.from; st.run = false; }
+        else { st.from = Date.now(); st.run = true; }
+        r1.textContent = st.run ? "Pause" : "Start";
+        render(); persist();
+      });
+      const r2 = document.createElement("button");
+      r2.className = "widget-btn ghost";
+      r2.textContent = "Reset";
+      r2.addEventListener("click", () => {
+        st.run = false; st.acc = 0; st.from = 0;
+        r1.textContent = "Start"; render(); persist();
+      });
+      const btns = document.createElement("div");
+      btns.className = "fly-actions";
+      btns.appendChild(r1); btns.appendChild(r2);
+      flyoutContent.appendChild(disp);
+      flyoutContent.appendChild(btns);
+      render();
+    } else {
+      if (!d.cd) d.cd = { run:false, remain:0, target:0, preset:1500 };
+      const cd = d.cd;
+      const render = () => {
+        const rem = cd.run ? Math.max(0, cd.target - Date.now()) : cd.remain;
+        const s = Math.floor(rem / 1000) % 60;
+        const m = Math.floor(rem / 60000);
+        disp.textContent = String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+        if (cd.run && rem === 0){ cd.run = false; cd.remain = 0; persist(); return; }
+      };
+      const iv = setInterval(render, 250);
+      flyoutContent._cleanup = () => clearInterval(iv);
+
+      const pRow = document.createElement("div");
+      pRow.className = "fly-row";
+      [["25","25m"],["5","5m"],["10","10m"]].forEach(([v, txt]) => {
+        const b = document.createElement("button");
+        b.className = "widget-btn small" + (cd.preset === parseInt(v,10)*1000 ? " on" : "");
+        b.textContent = txt;
+        b.addEventListener("click", () => {
+          cd.preset = parseInt(v,10)*1000;
+          cd.run = false; cd.remain = cd.preset;
+          pRow.querySelectorAll(".widget-btn").forEach(x => x.classList.remove("on"));
+          b.classList.add("on");
+          render(); persist();
+        });
+        pRow.appendChild(b);
+      });
+      const cust = document.createElement("input");
+      cust.className = "fly-input num";
+      cust.type = "number";
+      cust.min = "0";
+      cust.placeholder = "custom (min)";
+      cust.addEventListener("change", () => {
+        const mins = parseInt(cust.value, 10);
+        if (!isNaN(mins) && mins >= 0 && mins <= 999){
+          cd.preset = mins * 60000; cd.run = false; cd.remain = cd.preset; render(); persist();
+        }
+      });
+      pRow.appendChild(cust);
+      flyoutContent.appendChild(pRow);
+
+      const c1 = document.createElement("button");
+      c1.className = "widget-btn";
+      c1.textContent = cd.run ? "Pause" : "Start";
+      c1.addEventListener("click", () => {
+        if (!cd.run){
+          cd.remain = cd.remain || cd.preset;
+          cd.target = Date.now() + cd.remain;
+          cd.run = true;
+        } else {
+          cd.remain = Math.max(0, cd.target - Date.now());
+          cd.run = false;
+        }
+        c1.textContent = cd.run ? "Pause" : "Start";
+        render(); persist();
+      });
+      const c2 = document.createElement("button");
+      c2.className = "widget-btn ghost";
+      c2.textContent = "Reset";
+      c2.addEventListener("click", () => {
+        cd.run = false; cd.remain = cd.preset; c1.textContent = "Start"; render(); persist();
+      });
+      const cbtns = document.createElement("div");
+      cbtns.className = "fly-actions";
+      cbtns.appendChild(c1); cbtns.appendChild(c2);
+      flyoutContent.appendChild(disp);
+      flyoutContent.appendChild(cbtns);
+      render();
+    }
+  }
+
+  /* ---------------- toolbox ---------------- */
+  function buildToolbox(w){
+    flyoutContent.innerHTML = "";
+    const tabs = document.createElement("div");
+    tabs.className = "tm-tabs";
+    const jt = document.createElement("div");
+    jt.className = "tool-panel";
+
+    function b64(data){ try { return { ok:true, out:btoa(data) }; }
+      catch(e){ return { ok:false, err:"Input contains non-ASCII/non-Latin1 chars." }; } }
+    function ub64(s){ try { return { ok:true, out:atob(s.trim()) }; }
+      catch(e){ return { ok:false, err:"Invalid Base64." }; } }
+    function hexE(str){ 
+      let out = "";
+      for (let i = 0; i < str.length; i++) out += str.charCodeAt(i).toString(16).padStart(2,"0") + (i < str.length-1 ? " " : "");
+      return { ok:true, out }; }
+    function hexD(s){ 
+      try {
+        const t = s.trim().replace(/[^0-9a-fA-F]/g, "");
+        if (t.length % 2) return { ok:false, err:"Odd number of hex digits." };
+        let out = "";
+        for (let i = 0; i < t.length; i += 2) out += String.fromCharCode(parseInt(t.substr(i,2), 16));
+        return { ok:true, out };
+      } catch(e){ return { ok:false, err:"Invalid hex." }; } }
+    function encU(s){ return { ok:true, out:encodeURIComponent(s) }; }
+    function decU(s){ try { return { ok:true, out:decodeURIComponent(s) }; }
+      catch(e){ return { ok:false, err:"Invalid URI encoding." }; } }
+
+    function makeTool(title, fn){
+      const area = document.createElement("div");
+      area.className = "tool-panel";
+      const inp = document.createElement("textarea");
+      inp.className = "tool-input";
+      inp.placeholder = "Input " + title.toLowerCase() + "...";
+      const out = document.createElement("div");
+      out.className = "tool-out";
+      const go = document.createElement("button");
+      go.className = "widget-btn";
+      go.textContent = "Run";
+      const copy = document.createElement("button");
+      copy.className = "widget-btn ghost";
+      copy.textContent = "Copy";
+      copy.addEventListener("click", () => {
+        if (navigator.clipboard && out.textContent) navigator.clipboard.writeText(out.textContent);
+      });
+      go.addEventListener("click", () => {
+        const r = fn(inp.value);
+        if (r.ok) out.textContent = r.out.length ? r.out : "(empty result)";
+        else out.textContent = "Error: " + r.err;
+      });
+      const row = document.createElement("div");
+      row.className = "fly-actions";
+      row.appendChild(go); row.appendChild(copy);
+      area.appendChild(inp);
+      area.appendChild(row);
+      area.appendChild(out);
+      jt.appendChild(area);
+    }
+
+    const tools = [
+      ["JSON format", (v) => {
+        try { const o = JSON.parse(v); return { ok:true, out:JSON.stringify(o, null, 2) }; }
+        catch(e){ return { ok:false, err:"Invalid JSON: " + e.message }; } }],
+      ["Base64 encode", (v) => b64(v)],
+      ["Base64 decode", (v) => ub64(v)],
+      ["Text to Hex", (v) => hexE(v)],
+      ["Hex to Text", (v) => hexD(v)],
+      ["URL encode", (v) => encU(v)],
+      ["URL decode", (v) => decU(v)]
+    ];
+
+    tools.forEach(([name, fn], i) => {
+      const b = document.createElement("button");
+      b.className = "tm-tab" + (i === 0 ? " on" : "");
+      b.textContent = name;
+      b.addEventListener("click", () => {
+        tabs.querySelectorAll(".tm-tab").forEach(x => x.classList.remove("on"));
+        b.classList.add("on");
+        jt.innerHTML = "";
+        makeTool(name, fn);
+      });
+      tabs.appendChild(b);
+    });
+    flyoutContent.appendChild(tabs);
+    flyoutContent.appendChild(jt);
+    makeTool("JSON", tools[0][1]);
+  }
+
+  /* ---------------- habits ---------------- */
+  function buildHabits(w){
+    flyoutContent.innerHTML = "";
+    w.data.habits = w.data.habits || [];
+    const list = document.createElement("div");
+    list.className = "habit-list";
+
+    function dayKey(offset){
+    const d = new Date(Date.now() + (offset || 0) * 86400000);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  }
+
+    function streak(hab){
+      let n = 0;
+      for (let i = 0; i < 14; i++){
+        if (hab.days[dayKey(-i)]) n++;
+        else break;
+      }
+      return n;
+    }
+
+    function dateLabel(offset){
+      const d = new Date(); d.setDate(d.getDate() + offset);
+      return d.toLocaleDateString(undefined, { weekday:"narrow", day:"numeric" });
+    }
+
+    function commit(){
+      renderRows();
+      persist();
+    }
+
+    function renderRows(){
+      list.innerHTML = "";
+      if (!w.data.habits.length){
+        const e = document.createElement("div");
+        e.className = "habit-empty";
+        e.textContent = "No habits yet. Add one below.";
+        list.appendChild(e);
+        return;
+      }
+      w.data.habits.forEach((hab) => {
+        const row = document.createElement("div");
+        row.className = "habit-row";
+        const nm = document.createElement("button");
+        nm.className = "habit-name";
+        nm.textContent = hab.name || "Habit";
+        nm.addEventListener("click", () => {
+          const n = prompt("Rename habit:", hab.name);
+          if (n && n.trim()){ hab.name = n.trim().slice(0,40); commit(); }
+        });
+        nm.addEventListener("dblclick", (e) => e.preventDefault());
+        row.appendChild(nm);
+
+        const grid = document.createElement("div");
+        grid.className = "habit-grid";
+        for (let i = 13; i >= 0; i--){
+          const c = document.createElement("button");
+          c.className = "habit-day" + (hab.days[dayKey(-i)] ? " on" : "");
+          c.title = dateLabel(-i);
+          c.textContent = i === 0 ? "T" : "";
+          c.addEventListener("click", () => {
+            const k = dayKey(-i);
+            if (hab.days[k]) delete hab.days[k];
+            else hab.days[k] = true;
+            commit();
+          });
+          grid.appendChild(c);
+        }
+        row.appendChild(grid);
+
+        const st = document.createElement("span");
+        st.className = "habit-streak";
+        st.textContent = streak(hab) + "d";
+        row.appendChild(st);
+
+        const del = document.createElement("button");
+        del.className = "habit-del";
+        del.textContent = "x";
+        del.title = "Delete habit";
+        del.addEventListener("click", () => {
+          w.data.habits = w.data.habits.filter(h => h !== hab);
+          commit();
+        });
+        row.appendChild(del);
+        list.appendChild(row);
+      });
+    }
+
+    const add = document.createElement("div");
+    add.className = "habit-add";
+    const inp = document.createElement("input");
+    inp.className = "fly-input";
+    inp.placeholder = "New habit...";
+    inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && inp.value.trim()){ w.data.habits.push({ id:uid(), name:inp.value.trim().slice(0,40), days:{} }); inp.value=""; commit(); } e.stopPropagation(); });
+    const addBt = document.createElement("button");
+    addBt.className = "widget-btn";
+    addBt.textContent = "Add";
+    addBt.addEventListener("click", () => { if (inp.value.trim()){ w.data.habits.push({ id:uid(), name:inp.value.trim().slice(0,40), days:{} }); inp.value=""; commit(); } });
+    add.appendChild(inp); add.appendChild(addBt);
+
+    flyoutContent.appendChild(list);
+    flyoutContent.appendChild(add);
+    renderRows();
+    persist();
+  }
+
+  /* ---------------- weather ---------------- */
+  const WMO_CODES = {
+    0:"Clear sky", 1:"Mainly clear", 2:"Partly cloudy", 3:"Overcast",
+    45:"Fog", 48:"Fog", 51:"Light drizzle", 53:"Drizzle", 55:"Drizzle",
+    61:"Light rain", 63:"Rain", 65:"Heavy rain", 66:"Freezing rain", 67:"Freezing rain",
+    71:"Light snow", 73:"Snow", 75:"Heavy snow", 77:"Snow grains",
+    80:"Light showers", 81:"Showers", 82:"Heavy showers",
+    85:"Snow showers", 86:"Snow showers",
+    95:"Thunderstorm", 96:"Thunderstorm", 99:"Thunderstorm"
+  };
+
+  const fetchingWx = new Set();
+
+  function buildWeather(w){
+    flyoutContent.innerHTML = "";
+    w.data = w.data || {};
+    const panel = document.createElement("div");
+    panel.className = "wx-panel";
+    flyoutContent.appendChild(panel);
+
+    const showSearch = () => {
+      panel.innerHTML = "";
+      const row = document.createElement("div");
+      row.className = "fly-row";
+      const inp = document.createElement("input");
+      inp.className = "fly-input";
+      inp.placeholder = "City, Country (e.g. Berlin, Germany)";
+      inp.addEventListener("keydown", (e) => { if (e.key === "Enter"){ findCity(); } e.stopPropagation(); });
+      const bt = document.createElement("button");
+      bt.className = "widget-btn";
+      bt.textContent = "Search";
+      const findCity = async () => {
+        const q = inp.value.trim();
+        if (!q) return;
+        bt.disabled = true; bt.textContent = "...";
+        try {
+          const url = "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(q) + "&count=5";
+          const res = await fetch(url);
+          const json = await res.json();
+          if (!json.results || !json.results.length){ bt.disabled=false; bt.textContent="Search"; panel.appendChild(errMsg("No city found.")); return; }
+          panel.innerHTML = "";
+          panel.appendChild(doc("Select a city:"));
+          json.results.slice(0,5).forEach(r => {
+            const b = document.createElement("button");
+            b.className = "widget-btn";
+            b.textContent = r.name + (r.country ? ", " + r.country : "");
+            b.addEventListener("click", () => {
+              w.data.city = r.name + (r.country ? ", " + r.country : "");
+              w.data.lat = r.latitude; w.data.lon = r.longitude;
+              w.data.cache = null;
+              persist(); buildWeather(w);
+            });
+            panel.appendChild(b);
+          });
+        } catch(e){
+          bt.disabled = false; bt.textContent = "Search";
+          panel.appendChild(errMsg("Could not reach the location service. Check your connection."));
+        }
+      };
+      bt.addEventListener("click", findCity);
+      row.appendChild(inp); row.appendChild(bt);
+      panel.appendChild(row);
+      inp.focus();
+    };
+
+    const errMsg = (t) => { const d = document.createElement("div"); d.className = "wx-err"; d.textContent = t; return d; };
+    const doc = (t) => { const d = document.createElement("div"); d.className = "wx-doc"; d.textContent = t; return d; };
+
+    if (!w.data.lat || !w.data.lon || !w.data.city){
+      showSearch();
+      return;
+    }
+
+    const renderCache = (c) => {
+      panel.innerHTML = "";
+      const city = document.createElement("div");
+      city.className = "wx-city";
+      city.textContent = w.data.city;
+      panel.appendChild(city);
+      const now = document.createElement("div");
+      now.className = "wx-now";
+      now.innerHTML = '<span class="wx-tmp">' + c.temp + "</span><span class='wx-unit'>C</span><span class='wx-desc'>" + c.desc + "</span>";
+      panel.appendChild(now);
+      const det = document.createElement("div");
+      det.className = "wx-det";
+      det.innerHTML = "Feels " + c.feels + "C  H " + c.hum + "%  W " + c.wind + " km/h  P " + c.precip + "%";
+      panel.appendChild(det);
+      const days = document.createElement("div");
+      days.className = "wx-days";
+      c.days.forEach(dd => {
+        const d = document.createElement("div");
+        d.className = "wx-day";
+        d.innerHTML = "<span>" + dd.day + "</span><b>" + dd.desc + "</b><span>" + dd.hi + "/" + dd.lo + "C</span>";
+        days.appendChild(d);
+      });
+      panel.appendChild(days);
+      const ref = document.createElement("button");
+      ref.className = "widget-btn ghost";
+      ref.textContent = "Refresh";
+      ref.addEventListener("click", () => buildWeather(w));
+      panel.appendChild(ref);
+    };
+
+    if (w.data.cache){
+      renderCache(w.data.cache);
+      if (!fetchingWx.has(w.id)) fetchWeather(w.id);
+      return;
+    }
+    fetchWeather(w.id);
+
+    async function fetchWeather(id){
+      fetchingWx.add(id);
+      if (!w.data.cache){
+        const d = document.createElement("div");
+        d.className = "wx-load";
+        d.textContent = "Fetching weather...";
+        panel.innerHTML = "";
+        panel.appendChild(d);
+      }
+      try {
+        const url = "https://api.open-meteo.com/v1/forecast?latitude=" + w.data.lat + "&longitude=" + w.data.lon +
+          "&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,precipitation,wind_speed_10m" +
+          "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=auto";
+        const res = await fetch(url);
+        const json = await res.json();
+        if (!json.current){ panel.appendChild(errMsg("No weather data for that location.")); return; }
+        const c = {
+          temp: Math.round(json.current.temperature_2m),
+          feels: Math.round(json.current.apparent_temperature),
+          hum: Math.round(json.current.relative_humidity_2m),
+          wind: Math.round(json.current.wind_speed_10m),
+          precip: json.current.precipitation ? Math.round(json.current.precipitation) : 0,
+          desc: WMO_CODES[json.current.weather_code] || "Unknown",
+          days: (json.daily ? json.daily.time.map((t, i) => ({
+            day: new Date(t + "T12:00:00").toLocaleDateString(undefined, { weekday:"short" }),
+            desc: WMO_CODES[(json.daily.weather_code || [])[i]] || "Unknown",
+            hi: Math.round(json.daily.temperature_2m_max[i]),
+            lo: Math.round(json.daily.temperature_2m_min[i])
+          })) : [])
+        };
+        w.data.cache = c;
+        persist();
+        renderCache(c);
+      } catch(e){
+        panel.appendChild(errMsg("Weather fetch failed. Check your connection and refresh."));
+        if (w.data.cache) renderCache(w.data.cache); else showSearch();
+      } finally {
+        fetchingWx.delete(id);
+      }
+    }
   }
 
   /* ---------------- type to search anywhere ---------------- */
