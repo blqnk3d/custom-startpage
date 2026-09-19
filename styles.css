@@ -1,14 +1,8 @@
   @font-face{
-    font-family:'Iosevka Nerd Font';
-    src:url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.3.1/fonts/IosevkaNerdFont-Regular.woff2') format('woff2');
-    font-weight:400;
-    font-style:normal;
-    font-display:swap;
-  }
-  @font-face{
-    font-family:'Iosevka Nerd Font';
-    src:url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.3.1/fonts/IosevkaNerdFont-Bold.woff2') format('woff2');
-    font-weight:700;
+    font-family:'Shovel Knight';
+    src:url('ShovelKnightFont2_0.woff2') format('woff2'),
+        url('ShovelKnightFont2_0.ttf') format('truetype');
+    font-weight:400 700;
     font-style:normal;
     font-display:swap;
   }
@@ -26,8 +20,8 @@
     --danger:#a56a5f;
     --radius:10px;
     --shadow:0 14px 34px rgba(0,0,0,.5);
-    --font-ui:'Iosevka Nerd Font', system-ui, -apple-system, sans-serif;
-    --font-mono:'Iosevka Nerd Font', ui-monospace, 'SF Mono', monospace;
+    --font-ui:'Shovel Knight', system-ui, -apple-system, sans-serif;
+    --font-mono:'Shovel Knight', ui-monospace, 'SF Mono', monospace;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}

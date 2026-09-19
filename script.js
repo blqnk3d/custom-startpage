@@ -279,7 +279,7 @@
     if (w.type === "note"){
       const ta = document.createElement("textarea");
       ta.className = "note-text";
-      ta.placeholder = "Write something…";
+      ta.placeholder = "Write something...";
       ta.value = w.data.text || "";
       ta.addEventListener("pointerdown", e => e.stopPropagation());
       ta.addEventListener("input", () => { w.data.text = ta.value; persist(); });
@@ -396,7 +396,7 @@
       popLabel.value = w.data.label || "";
       popUrl.value = w.data.url || "";
     }
-    popHue.value = w.style.hue; popHueVal.textContent = w.style.hue + "°";
+    popHue.value = w.style.hue; popHueVal.textContent = w.style.hue;
     popRadius.value = w.style.radius; popRadiusVal.textContent = w.style.radius + "px";
     popOpac.value = w.style.opacity; popOpacVal.textContent = w.style.opacity + "%";
 
@@ -427,7 +427,7 @@
   popHue.addEventListener("input", () => {
     if (!popTarget) return;
     popTarget.style.hue = +popHue.value;
-    popHueVal.textContent = popHue.value + "°";
+    popHueVal.textContent = popHue.value;
     const icon = popEl.querySelector(".widget-icon");
     if (icon) icon.style.setProperty("--tile", tileColor(popTarget.style.hue));
     persist();
@@ -666,17 +666,17 @@
     const rows = [];
 
     const directUrl = isLikelyUrl(q);
-    if (directUrl) rows.push({ type:"direct", label:"Open " + directUrl, url:directUrl, icon:ICON_EXTERNAL, badge:"→" });
+    if (directUrl) rows.push({ type:"direct", label:"Open " + directUrl, url:directUrl, icon:ICON_EXTERNAL, badge:"" });
 
     const shortcutUrl = SMART_URLS[lower];
-    if (shortcutUrl) rows.push({ type:"shortcut", label:"Go to " + formatDomain(shortcutUrl), url:shortcutUrl, icon:ICON_EXTERNAL, badge:"→" });
+    if (shortcutUrl) rows.push({ type:"shortcut", label:"Go to " + formatDomain(shortcutUrl), url:shortcutUrl, icon:ICON_EXTERNAL, badge:"" });
 
     getSearchHistory().filter(s => s.toLowerCase().includes(lower)).slice(0, 7).forEach(s => {
       const smart = smartUrlFor(s);
-      rows.push({ type:"history", label:s, text:s, url:smart, icon:ICONS.link, badge:smart ? "→" : "" });
+      rows.push({ type:"history", label:s, text:s, url:smart, icon:ICONS.link, badge:"" });
     });
 
-    rows.push({ type:"search", label:"Search for “" + q + "”", url:"https://noai.duckduckgo.com/?ia=web&t=h_&q=" + encodeURIComponent(q), icon:ICON_SEARCH, badge:"↵" });
+    rows.push({ type:"search", label:'Search for "' + q + '"', url:"https://noai.duckduckgo.com/?ia=web&t=h_&q=" + encodeURIComponent(q), icon:ICON_SEARCH, badge:"" });
 
     searchSuggest.innerHTML = "";
     rows.forEach((row, i) => {
@@ -700,8 +700,8 @@
         del.className = "ss-del";
         del.type = "button";
         del.title = "Remove from history";
-        del.setAttribute("aria-label", "Remove “" + row.label + "” from history");
-        del.textContent = "✕";
+        del.setAttribute("aria-label", 'Remove "' + row.label + '" from history');
+        del.innerHTML = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
         del.addEventListener("mousedown", e => {
           e.preventDefault();
           e.stopPropagation();
@@ -730,7 +730,7 @@
 
     const hint = document.createElement("div");
     hint.className = "ss-hint";
-    hint.textContent = "↑ ↓ navigate · ↵ go · ✕ remove · esc close";
+    hint.textContent = "Up/Down navigate - Enter go - Esc close. Hover a history row to remove it.";
     searchSuggest.appendChild(hint);
     searchSuggest.classList.add("open");
     setActive(0);
@@ -857,17 +857,17 @@
     const disp = flyoutBody.querySelector("#calcDisp");
     const grid = flyoutBody.querySelector("#calcGrid");
     let expr = "";
-    const keys = ["C","(",")","÷","7","8","9","×","4","5","6","−","1","2","3","+","0",".","⌫","="];
+    const keys = ["C","(",")","/","7","8","9","*","4","5","6","-","1","2","3","+","0",".","DEL","="];
     keys.forEach(k => {
       const b = document.createElement("button");
-      b.className = "calc-btn" + (["÷","×","−","+","="].includes(k) ? " op" : "") + (k === "0" ? "" : "");
+      b.className = "calc-btn" + (["/","*","-","+","="].includes(k) ? " op" : "") + (k === "0" ? "" : "");
       b.textContent = k;
       b.addEventListener("click", () => {
         if (k === "C"){ expr = ""; }
-        else if (k === "⌫"){ expr = expr.slice(0,-1); }
+        else if (k === "DEL"){ expr = expr.slice(0,-1); }
         else if (k === "="){
           try{
-            const safe = expr.replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-");
+            const safe = expr; // keys already use ASCII * / -
             if (!/^[0-9+\-*/().\s]+$/.test(safe)) throw new Error("bad");
             const result = Function('"use strict";return (' + safe + ")")();
             expr = String(Math.round(result * 1e10) / 1e10);
@@ -884,7 +884,7 @@
   function buildTodo(w){
     flyoutBody.innerHTML = `
       <div class="todo-add">
-        <input type="text" id="todoInput" placeholder="Add a task…">
+        <input type="text" id="todoInput" placeholder="Add a task...">
         <button id="todoAddBtn">Add</button>
       </div>
       <div id="todoList"></div>`;
@@ -898,7 +898,7 @@
       w.data.items.forEach((item, i) => {
         const row = document.createElement("div");
         row.className = "todo-item" + (item.done ? " done" : "");
-        row.innerHTML = `<input type="checkbox" ${item.done ? "checked" : ""}><span></span><button>✕</button>`;
+        row.innerHTML = `<input type="checkbox" ${item.done ? "checked" : ""}><span></span><button><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
         row.querySelector("span").textContent = item.text;
         row.querySelector('input[type="checkbox"]').addEventListener("change", (e) => {
           item.done = e.target.checked; persist(); draw();
@@ -926,14 +926,14 @@
     let view = new Date();
     flyoutBody.innerHTML = `
       <div class="cal-nav">
-        <button id="calPrev">‹</button>
+        <button id="calPrev">&lt;</button>
         <div class="cal-title" id="calTitle"></div>
-        <button id="calNext">›</button>
+        <button id="calNext">&gt;</button>
       </div>
       <div class="cal-grid" id="calGrid"></div>
       <div class="cal-note-box" id="calNoteBox" style="display:none;">
         <span class="cal-note-label" id="calNoteLabel"></span>
-        <textarea id="calNoteText" placeholder="Add a note for this day…"></textarea>
+        <textarea id="calNoteText" placeholder="Add a note for this day..."></textarea>
       </div>`;
     const grid = flyoutBody.querySelector("#calGrid");
     const title = flyoutBody.querySelector("#calTitle");
@@ -1014,7 +1014,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>
         <div class="ocr-drop-title">Drop an image here</div>
         <div class="ocr-drop-sub">pick a file, drag one in, or paste (Ctrl/Cmd+V)</div>
-        <button class="btn primary" id="ocrPick">Choose image…</button>
+        <button class="btn primary" id="ocrPick">Choose image...</button>
       </div>
       <div class="ocr-preview" id="ocrPreview"></div>
       <div class="ocr-status" id="ocrStatus"></div>
@@ -1070,7 +1070,7 @@
       result.style.display = "none";
       preview.innerHTML = `<img src="${URL.createObjectURL(file)}" alt="source">`;
       status.style.display = "block";
-      status.innerHTML = `<div class="bar"><i></i></div><div class="msg">Starting OCR engine…</div>`;
+      status.innerHTML = `<div class="bar"><i></i></div><div class="msg">Starting OCR engine...</div>`;
       const bar = status.querySelector(".bar i");
       const msg = status.querySelector(".msg");
       try{
@@ -1082,7 +1082,7 @@
               bar.style.width = pct + "%";
               msg.textContent = "Recognizing text — " + pct + "%";
             } else if (m.status){
-              msg.textContent = m.status.replace(/^./, c => c.toUpperCase()) + "…";
+              msg.textContent = m.status.replace(/^./, c => c.toUpperCase()) + "...";
             }
           }
         });

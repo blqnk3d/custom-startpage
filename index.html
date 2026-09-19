@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Slate — widget desktop</title>
+<link rel="preload" href="ShovelKnightFont2_0.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,7 +14,7 @@
   <div class="searchwrap" id="searchWrap">
     <div class="searchbar-wrap">
       <input class="searchbar" id="searchInput" placeholder="Type to search" autocomplete="off" spellcheck="false" autofocus>
-      <button class="search-clear" id="searchClear" title="Clear" aria-label="Clear">✕</button>
+      <button class="search-clear" id="searchClear" title="Clear" aria-label="Clear"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="search-suggest" id="searchSuggest"></div>
   </div>
@@ -27,9 +28,9 @@
   <div class="dock">
     <div class="dock-menu" id="dockMenu">
       <button id="btnExport">Export layout (.json)</button>
-      <button id="btnImport">Import layout…</button>
+      <button id="btnImport">Import layout...</button>
       <button id="btnReset">Reset everything</button>
-      <button id="btnBackground">Background…</button>
+      <button id="btnBackground">Background...</button>
     </div>
     <div class="dock-btn" id="btnMenu" title="More">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg>
@@ -80,7 +81,7 @@
         <label>Label</label>
         <input type="text" id="scLabel" placeholder="e.g. GitHub">
         <label>URL</label>
-        <input type="text" id="scUrl" placeholder="https://…">
+        <input type="text" id="scUrl" placeholder="https://...">
       </div>
 
       <div class="modal-actions">
@@ -122,13 +123,13 @@
       <p class="sub">Give the desktop its own look.</p>
       <div class="bg-field">
         <label>Upload an image</label>
-        <button class="btn" id="bgPick">Choose image…</button>
+        <button class="btn" id="bgPick">Choose image...</button>
         <input type="file" id="bgFile" accept="image/*" style="display:none">
       </div>
       <div class="bg-field">
-        <label>…or paste an image URL</label>
+        <label>...or paste an image URL</label>
         <div class="bg-url-row">
-          <input type="text" class="bg-url" id="bgUrl" placeholder="https://…/wallpaper.jpg">
+          <input type="text" class="bg-url" id="bgUrl" placeholder="https://.../wallpaper.jpg">
           <button class="btn primary" id="bgApplyUrl">Apply</button>
         </div>
       </div>
@@ -144,7 +145,7 @@
   <div class="flyout" id="flyout">
     <div class="flyout-head" id="flyoutHead">
       <h3 id="flyoutTitle">—</h3>
-      <button class="flyout-close" id="flyoutClose">✕</button>
+      <button class="flyout-close" id="flyoutClose" title="Close"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="flyout-body" id="flyoutBody"></div>
   </div>
