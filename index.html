@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>New  Tab</title>
 <link rel="preload" href="ShovelKnightFont2_0.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
 
@@ -23,8 +23,8 @@
 
   <div id="canvas"></div>
 
-  <div class="hint">Click the pencil to edit widgets. Click a widget to use it — or just start typing to search.</div>
- 
+  <div class="hint">Click the pencil to arrange, resize and style widgets. Click a widget to use it — or just start typing to search.</div>
+
   <div class="dock">
     <div class="dock-menu" id="dockMenu">
       <button id="btnExport">Export layout (.json)</button>
@@ -75,6 +75,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M16 4v3h3"/></svg>
           <span>Sticky note</span>
         </div>
+        <div class="type-card" data-type="kanban">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="6" height="16" rx="1.2"/><rect x="9.7" y="4" width="6" height="11" rx="1.2"/><rect x="16.4" y="4" width="4.6" height="7" rx="1.2"/></svg>
+          <span>Kanban board</span>
+        </div>
       </div>
 
       <div class="form-row" id="shortcutForm">
@@ -90,6 +94,7 @@
       </div>
     </div>
   </div>
+
   <!-- style popover -->
   <div class="popover" id="stylePop">
     <div id="popShortcutFields" style="display:flex; flex-direction:column; gap:8px;">

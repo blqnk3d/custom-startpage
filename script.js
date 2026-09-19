@@ -125,7 +125,27 @@
         style:{hue:280, radius:0, opacity:100}, data:{notes:{}} },
       { id: uid(), type:"ocr", x:120, y:430, w:110, h:110,
         style:{hue:200, radius:0, opacity:100}, data:{} },
+      { id: uid(), type:"kanban", x:420, y:150, w:300, h:340,
+        style:{hue:220, radius:0, opacity:100},
+        data:{ columns:[
+          { id: uid(), title:"To do", items:[] },
+          { id: uid(), title:"Doing", items:[] },
+          { id: uid(), title:"Done", items:[] }
+        ]} },
     ];
+  }
+
+  if (!storage.get("slate.widgets.kanbanSeeded", false) && !widgets.some(w => w.type === "kanban")){
+    widgets.push({
+      id: uid(), type:"kanban", x:420, y:150, w:300, h:340,
+      style:{hue:220, radius:0, opacity:100},
+      data:{ columns:[
+        { id: uid(), title:"To do", items:[] },
+        { id: uid(), title:"Doing", items:[] },
+        { id: uid(), title:"Done", items:[] }
+      ]}
+    });
+    storage.set("slate.widgets.kanbanSeeded", true);
   }
 
   let editMode = false;
@@ -149,10 +169,11 @@
     todo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>',
     calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
     note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M16 4v3h3"/></svg>',
-    ocr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H4a1 1 0 0 0-1 1v3M17 3h3a1 1 0 0 1 1 1v3M21 17v3a1 1 0 0 1-1 1h-3M7 21H4a1 1 0 0 1-1-1v-3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>'
+    ocr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H4a1 1 0 0 0-1 1v3M17 3h3a1 1 0 0 1 1 1v3M21 17v3a1 1 0 0 1-1 1h-3M7 21H4a1 1 0 0 1-1-1v-3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+    kanban: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="6" height="16" rx="1.4"/><rect x="9.7" y="4" width="6" height="11" rx="1.4"/><rect x="16.4" y="4" width="4.6" height="7" rx="1.4"/></svg>'
   };
 
-  const WIDGET_LABELS = { calculator:"Calculator", todo:"To-do", calendar:"Calendar", ocr:"OCR", note:"Note" };
+  const WIDGET_LABELS = { calculator:"Calculator", todo:"To-do", calendar:"Calendar", ocr:"OCR", note:"Note", kanban:"Kanban" };
 
   /* ---------------- smart search map ---------------- */
   const SMART_URLS = {
@@ -501,6 +522,13 @@
     if (pendingType === "todo") base.data = { items: [] };
     if (pendingType === "calendar") base.data = { notes: {} };
     if (pendingType === "note") base.data = { text: "" };
+    if (pendingType === "kanban") base.data = {
+      columns: [
+        { id: uid(), title:"To do", items:[] },
+        { id: uid(), title:"Doing", items:[] },
+        { id: uid(), title:"Done", items:[] }
+      ]
+    };
     widgets.push(base);
     persist();
     renderAll();
@@ -840,6 +868,7 @@
     else if (w.type === "todo"){ flyoutTitle.textContent = "To-do"; buildTodo(w); }
     else if (w.type === "calendar"){ flyoutTitle.textContent = "Calendar"; buildCalendar(w); }
     else if (w.type === "ocr"){ flyoutTitle.textContent = "OCR"; buildOCR(w); }
+    else if (w.type === "kanban"){ flyoutTitle.textContent = "Kanban board"; buildKanban(w); }
     else return;
 
     flyout.classList.add("open");
@@ -1104,6 +1133,176 @@
         status.innerHTML = `<div class="msg" style="color:var(--danger)">OCR failed — ${(err && err.message) || err}</div>`;
       }
     }
+  }
+
+  /* ---------------- Kanban board window ---------------- */
+  function buildKanban(w){
+    if (!Array.isArray(w.data.columns) || !w.data.columns.length){
+      w.data.columns = [
+        { id: uid(), title:"To do", items:[] },
+        { id: uid(), title:"Doing", items:[] },
+        { id: uid(), title:"Done", items:[] }
+      ];
+    }
+    flyoutBody.innerHTML = `
+      <div class="kanban" id="kanbanBoard"></div>
+      <div class="kanban-hint">Click a column or card title to edit it. Drag cards to move them between columns.</div>`;
+    const board = flyoutBody.querySelector("#kanbanBoard");
+
+    function draw(){
+      board.innerHTML = "";
+      w.data.columns.forEach((col, ci) => {
+        const colEl = document.createElement("div");
+        colEl.className = "kanban-col";
+        colEl.dataset.col = col.id;
+
+        const head = document.createElement("div");
+        head.className = "kanban-col-head";
+        const title = document.createElement("input");
+        title.className = "kanban-title";
+        title.value = col.title;
+        title.maxLength = 40;
+        title.spellcheck = false;
+        title.addEventListener("input", () => { col.title = title.value; persist(); });
+        const count = document.createElement("span");
+        count.className = "kanban-count";
+        count.textContent = col.items.length;
+        head.appendChild(title);
+        head.appendChild(count);
+        const delCol = document.createElement("button");
+        delCol.className = "kanban-del-col";
+        delCol.title = "Delete column";
+        delCol.setAttribute("aria-label", "Delete column " + col.title);
+        delCol.innerHTML = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+        delCol.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (!confirm('Delete column "' + (col.title || "Untitled") + '" and all of its cards?')) return;
+          w.data.columns.splice(ci, 1);
+          persist(); draw();
+        });
+        head.appendChild(delCol);
+        colEl.appendChild(head);
+
+        const list = document.createElement("div");
+        list.className = "kanban-list";
+        list.dataset.col = col.id;
+
+        if (col.items.length === 0){
+          const empty = document.createElement("div");
+          empty.className = "kanban-empty";
+          empty.textContent = "No cards yet.";
+          list.appendChild(empty);
+        }
+
+        col.items.forEach((item) => {
+          const card = document.createElement("div");
+          card.className = "kanban-card";
+          card.draggable = true;
+          card.dataset.id = item.id;
+          const text = document.createElement("div");
+          text.className = "kanban-card-text";
+          text.textContent = item.text;
+          text.contentEditable = "true";
+          text.spellcheck = false;
+          text.addEventListener("blur", () => {
+            item.text = text.textContent.trim();
+            persist(); draw();
+          });
+          text.addEventListener("keydown", (e) => {
+            if (e.key === "Enter"){ e.preventDefault(); text.blur(); }
+            e.stopPropagation();
+          });
+          card.appendChild(text);
+          const delCard = document.createElement("button");
+          delCard.className = "kanban-del-card";
+          delCard.title = "Delete card";
+          delCard.setAttribute("aria-label", "Delete card");
+          delCard.innerHTML = '<svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+          delCard.addEventListener("click", (e) => {
+            e.stopPropagation();
+            col.items.splice(col.items.indexOf(item), 1);
+            persist(); draw();
+          });
+          card.appendChild(delCard);
+
+          card.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/plain", item.id);
+            e.dataTransfer.setData("text/kanban-from", col.id);
+            card.classList.add("dragging");
+          });
+          card.addEventListener("dragend", () => { card.classList.remove("dragging"); });
+          list.appendChild(card);
+        });
+
+        list.addEventListener("dragover", (e) => { e.preventDefault(); list.classList.add("over"); });
+        list.addEventListener("dragleave", () => list.classList.remove("over"));
+        list.addEventListener("drop", (e) => {
+          e.preventDefault();
+          list.classList.remove("over");
+          const id = e.dataTransfer.getData("text/plain");
+          const fromId = e.dataTransfer.getData("text/kanban-from");
+          if (!id) return;
+          const fromCol = w.data.columns.find(c => c.id === fromId);
+          const toCol = w.data.columns.find(c => c.id === col.id);
+          if (!toCol) return;
+          const moving = fromCol ? fromCol.items.find(it => it.id === id) : null;
+          const existing = toCol.items.find(it => it.id === id);
+          if (moving){
+            const idx = fromCol.items.indexOf(moving);
+            if (idx >= 0) fromCol.items.splice(idx, 1);
+          }
+          if (!existing){
+            toCol.items.push({ id, text: moving ? moving.text : "New card" });
+          } else if (moving){
+            existing.text = moving.text;
+          }
+          persist(); draw();
+        });
+
+        colEl.appendChild(list);
+
+        const addRow = document.createElement("div");
+        addRow.className = "kanban-add-card";
+        const addInp = document.createElement("input");
+        addInp.type = "text";
+        addInp.placeholder = "Add a card...";
+        addInp.spellcheck = false;
+        addInp.addEventListener("keydown", (e) => {
+          if (e.key === "Enter"){ e.preventDefault(); addItem(); }
+          e.stopPropagation();
+        });
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "+";
+        addBtn.title = "Add card";
+        addBtn.addEventListener("click", addItem);
+        addRow.appendChild(addInp);
+        addRow.appendChild(addBtn);
+        colEl.appendChild(addRow);
+        board.appendChild(colEl);
+
+        function addItem(){
+          const v = addInp.value.trim();
+          if (!v) return;
+          col.items.push({ id: uid(), text: v });
+          addInp.value = "";
+          persist(); draw();
+        }
+      });
+
+      const addCol = document.createElement("div");
+      addCol.className = "kanban-new-col";
+      const addColBtn = document.createElement("button");
+      addColBtn.textContent = "+";
+      addColBtn.title = "Add a column";
+      addColBtn.addEventListener("click", () => {
+        w.data.columns.push({ id: uid(), title:"New column", items:[] });
+        persist(); draw();
+      });
+      addCol.appendChild(addColBtn);
+      board.appendChild(addCol);
+    }
+
+    draw();
   }
 
   /* ---------------- type to search anywhere ---------------- */
